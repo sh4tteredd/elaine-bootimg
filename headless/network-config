@@ -1,0 +1,23 @@
+# Netplan configuration rendered by cloud-init on first boot.
+# See https://cloudinit.readthedocs.io/en/latest/reference/network_config.html
+network:
+  version: 2
+  renderer: networkd
+
+  ethernets:
+    # A USB Ethernet adapter is the reliable option on elaine:
+    # CONFIG_USB_RTL8152 / AX8817X / CDCETHER / CDC_NCM are built into the kernel.
+    # "net.ifnames=0" in u-boot-elaine.cmd keeps this name stable as eth0.
+    eth0:
+      dhcp4: true
+      optional: true
+
+  wifis:
+    # Only appears once the Broadcom dhd module + firmware are installed.
+    # See the "WiFi" section in headless/README.md.
+    wlan0:
+      dhcp4: true
+      optional: true
+      access-points:
+        "YOUR-SSID":
+          password: "YOUR-PASSWORD"

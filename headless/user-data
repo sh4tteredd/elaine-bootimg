@@ -1,0 +1,46 @@
+#cloud-config
+# Cloud-init seed for Ubuntu preinstalled server/desktop images (arm64+raspi).
+# Copy this file, together with meta-data and network-config, to the
+# "system-boot" FAT partition of the USB drive.
+
+hostname: elaine
+manage_etc_hosts: true
+preserve_hostname: false
+
+users:
+  - name: ubuntu
+    gecos: Ubuntu
+    groups: [adm, dialout, sudo, plugdev]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: false
+    # Put your public key here so you can log in without a password.
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA...REPLACE-WITH-YOUR-PUBLIC-KEY... you@laptop
+
+# Allow password logins over SSH (handy on a headless device).
+ssh_pwauth: true
+
+# Set the password for the ubuntu user. cloud-init hashes it for you.
+# Use a real password, or delete this block if you only use SSH keys.
+chpasswd:
+  expire: false
+  list: |
+    ubuntu:elaine
+
+# Keep the first boot fast: do not touch the network for apt.
+package_update: false
+package_upgrade: false
+
+runcmd:
+  # No desktop needed for a headless box.
+  - systemctl set-default multi-user.target
+  # snapd seeding is one of the slowest parts of the first boot.
+  - sh -c 'systemctl disable --now snapd.service snapd.seeded.service snapd.socket 2>/dev/null || true'
+  - sh -c 'systemctl disable --now ModemManager.service 2>/dev/null || true'
+  - sh -c 'systemctl disable --now apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true'
+  # Save the interface list so you can find the address after boot.
+  - sh -c 'ip -br link > /var/log/elaine-links.txt'
+  # Uncomment to stop cloud-init from running again on every boot.
+  # If you change network-config later, bump "instance-id" in meta-data instead.
+  # - touch /etc/cloud/cloud-init.disabled
